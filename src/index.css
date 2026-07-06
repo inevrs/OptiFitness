@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── OptiFitness Design Tokens ──────────────────────────────── */
+:root {
+  --lime:    #ff2a85;   /* primary accent  */
+  --purple:  #c084fc;  /* secondary accent */
+  --bg:      #090909;   /* solid black/dark-gray */
+  --surface: #181818;
+  --border:  rgba(255,255,255,0.08);
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    background-color: var(--bg);
+    color: #f0f0f0;
+    font-family: 'Outfit', sans-serif;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* iOS-style scrollbar hide */
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+}
+
+@layer components {
+  /* ── Glass card base ───────────────────────────── */
+  .zf-card {
+    @apply rounded-2xl border;
+    background: rgba(255,255,255,0.05);
+    border-color: var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* ── Lime accent button ─────────────────────────── */
+  .btn-lime {
+    background: var(--lime);
+    color: #111;
+    @apply font-bold rounded-xl px-5 py-3 transition active:scale-95;
+  }
+
+  /* ── Purple accent button ───────────────────────── */
+  .btn-purple {
+    background: var(--purple);
+    color: #111;
+    @apply font-bold rounded-xl px-5 py-3 transition active:scale-95;
+  }
+
+  /* ── Lime text gradient ─────────────────────────── */
+  .text-lime-grad {
+    background: linear-gradient(135deg, var(--lime), #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Purple text gradient ───────────────────────── */
+  .text-purple-grad {
+    background: linear-gradient(135deg, var(--purple), #e879f9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Input field base ───────────────────────────── */
+  .zf-input {
+    @apply w-full rounded-xl px-4 py-3 text-white transition focus:outline-none;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .zf-input:focus {
+    border-color: var(--lime);
+  }
+  .zf-input::placeholder { color: rgba(255,255,255,0.25); }
+}
+
+/* ── Page wrapper padding ───────────────────────── */
+.page {
+  min-height: 100svh;
+  padding: 3rem 1.25rem 8rem;
+  background: var(--bg);
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+/* ── Lime glow effects ──────────────────────────── */
+.glow-lime {
+  box-shadow: 0 0 20px rgba(255,42,133,0.2), 0 0 60px rgba(255,42,133,0.06);
+}
+.glow-purple {
+  box-shadow: 0 0 20px rgba(192,132,252,0.2), 0 0 60px rgba(192,132,252,0.06);
+}
