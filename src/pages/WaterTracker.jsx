@@ -76,11 +76,23 @@ export default function WaterTracker() {
 
 
   return (
+  <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundImage: "url('src/assets/workout_images/workout-water.png')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#0a0a0a',
+      zIndex: -1,
+    }} />
+
     <div className="page">
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Hydration</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Stay hydrated throughout the day</p>
+          <p className="text-white text-sm mt-0.5">Stay hydrated throughout the day</p>
         </div>
 
         {/* Ring card */}
@@ -169,5 +181,6 @@ export default function WaterTracker() {
         )}
       </div>
     </div>
+    </>
   );
 }

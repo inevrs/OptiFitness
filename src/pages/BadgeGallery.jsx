@@ -22,6 +22,16 @@ export default function BadgeGallery() {
   }, []);
 
   return (
+    <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundColor: '#0a0a0a',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      zIndex: -1,
+    }} />
     <div className="page">
       <div className="space-y-6">
         <div>
@@ -48,5 +58,6 @@ export default function BadgeGallery() {
         )}
       </div>
     </div>
+    </>
   );
 }

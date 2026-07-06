@@ -72,7 +72,7 @@ app.get('/api/squads/my-squad', auth, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT s.* FROM squads s JOIN squad_members sm ON s.id = sm.squad_id WHERE sm.user_id = ?', [req.userId]);
     if (rows.length === 0) return res.json(null);
-    const [members] = await pool.query('SELECT u.id, u.username, u.full_name FROM users u JOIN squad_members sm ON u.id = sm.user_id WHERE sm.squad_id = ?', [rows[0].id]);
+    const [members] = await pool.query('SELECT u.id, u.username, u.full_name FROM users u JOIN squad_members sm ON u.id = sm.user_id WHERE sm.squad_id = ? ORDER BY sm.joined_at ASC', [rows[0].id]);
     res.json({ squad: rows[0], members });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -334,16 +334,53 @@ app.post('/api/squads/:id/join', auth, async (req, res) => {
 
 app.post('/api/squads/:id/leave', auth, async (req, res) => {
   try {
-    await pool.query('DELETE FROM squad_members WHERE user_id = ? AND squad_id = ?', [req.userId, req.params.id]);
+    const squadId = req.params.id;
+
+    const [squads] = await pool.query('SELECT * FROM squads WHERE id = ?', [squadId]);
+    if (squads.length === 0) return res.status(404).json({ error: 'Squad not found' });
+    const squad = squads[0];
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // Remove the leaving member
+      await conn.query('DELETE FROM squad_members WHERE user_id = ? AND squad_id = ?', [req.userId, squadId]);
+
+      // If the leaving user was the leader, promote the next-oldest member
+      if (squad.created_by === req.userId) {
+        const [remaining] = await conn.query(
+          'SELECT user_id FROM squad_members WHERE squad_id = ? ORDER BY joined_at ASC LIMIT 1',
+          [squadId]
+        );
+
+        if (remaining.length > 0) {
+          // Promote the next member to leader
+          await conn.query('UPDATE squads SET created_by = ? WHERE id = ?', [remaining[0].user_id, squadId]);
+        } else {
+          // No members left — delete the now-empty squad
+          await conn.query('DELETE FROM squads WHERE id = ?', [squadId]);
+        }
+      }
+
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+
     res.json({ message: 'Left squad' });
   } catch (err) {
+    console.error('Leave squad error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 app.get('/api/squads/:id', auth, async (req, res) => {
   try {
-    const [squads] = await pool.query('SELECT * FROM squads WHERE id = ?', [req.params.id]);
+    const [members] = await pool.query('SELECT u.id, u.username, u.full_name FROM users u JOIN squad_members sm ON u.id = sm.user_id WHERE sm.squad_id = ? ORDER BY sm.joined_at ASC', [req.params.id]);
     if (squads.length === 0) return res.status(404).json({ error: 'Squad not found' });
     const [members] = await pool.query('SELECT u.id, u.username, u.full_name FROM users u JOIN squad_members sm ON u.id = sm.user_id WHERE sm.squad_id = ?', [req.params.id]);
     res.json({ squad: squads[0], members });

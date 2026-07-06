@@ -52,7 +52,19 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const waterPct = Math.min((water.count / water.goal) * 100, 100);
 
-  return (
+return (
+  <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundImage: "url('src/assets/workout_images/workout-strength.jpg')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#0a0a0a',
+      zIndex: -1,
+    }} />
+  
     <div className="page">
       <motion.div variants={stagger} initial="hidden" animate="visible" className="space-y-5">
 
@@ -172,5 +184,6 @@ export default function Dashboard() {
 
       </motion.div>
     </div>
+  </>
   );
 }

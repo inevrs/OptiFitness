@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '../components/GlassCard';
-import { apiGet, apiPost } from '../utils/api';
+import { apiGet, apiPost, apiDelete } from '../utils/api';
 import { bridge } from '../utils/appInventorBridge';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
 export default function SquadPage() {
   const [mySquadData, setMySquadData] = useState(null); // { squad: {}, members: [] } or null
   const [allSquads, setAllSquads] = useState([]);
   const [newSquadName, setNewSquadName] = useState('');
   const [loading, setLoading] = useState(true);
+  const { user } = useContext(AuthContext);
+  const isLeader = mySquadData?.squad?.created_by === user?.id;
 
   const fetchData = async () => {
     try {
@@ -68,6 +72,19 @@ export default function SquadPage() {
     }
   };
 
+  const handleDeleteSquad = async () => {
+  if (!mySquadData) return;
+  const confirmed = window.confirm(`Delete "${mySquadData.squad.name}"? This can't be undone.`);
+  if (!confirmed) return;
+  try {
+    await apiDelete(`/squads/${mySquadData.squad.id}`);
+    bridge.speak('Squad deleted');
+    fetchData();
+  } catch (err) {
+    console.error('Failed to delete squad:', err);
+  }
+};
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#090909] text-white flex items-center justify-center">
@@ -77,6 +94,17 @@ export default function SquadPage() {
   }
 
   return (
+    <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundImage: "url('src/assets/workout_images/workout-squad.jpg')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#0a0a0a',
+      zIndex: -1,
+    }} />
     <div className="page">
       <div className="space-y-6">
         <div>
@@ -117,7 +145,9 @@ export default function SquadPage() {
                     </div>
                     <span className="font-medium text-white">{member.full_name || member.username}</span>
                   </div>
-                  {i === 0 && <span className="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full">Leader</span>}
+                  {member.id === mySquadData.squad.created_by && (
+                    <span className="text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full">Leader</span>
+                  )}
                 </GlassCard>
               ))}
             </div>
@@ -126,10 +156,20 @@ export default function SquadPage() {
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={handleLeaveSquad}
-              className="w-full py-3.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-2xl font-semibold transition"
+              className="w-full py-3.5 bg-red-500/40 hover:bg-red-500/20 border border-red-500/20 text-white rounded-2xl font-semibold transition"
             >
               Leave Squad
             </motion.button>
+
+            {isLeader && (
+            <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={handleDeleteSquad}
+            className="w-full py-3.5 bg-red-500/40 hover:bg-red-600/30 border border-red-600/40 text-white rounded-2xl font-semibold transition"
+         >
+            Delete Squad
+          </motion.button>
+            )}
           </div>
         ) : (
           /* Not in Squad View */
@@ -190,5 +230,6 @@ export default function SquadPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

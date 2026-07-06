@@ -49,6 +49,18 @@ export default function ExerciseLog() {
   };
 
   return (
+    <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundImage: "url('src/assets/workout_images/hero-bg.png')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#0a0a0a',
+      zIndex: -1,
+    }} />
+
     <div className="page">
       <div className="space-y-6">
         <div>
@@ -168,5 +180,6 @@ export default function ExerciseLog() {
         )}
       </div>
     </div>
+    </>
   );
 }

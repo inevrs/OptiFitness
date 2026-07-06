@@ -63,6 +63,18 @@ export default function ChallengePicker() {
   };
 
   return (
+    <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundImage: "url('src/assets/workout_images/workout-cardio.jpg')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#0a0a0a',
+      zIndex: -1,
+    }} />
+
     <div className="page relative overflow-hidden">
       {/* Celebration gif */}
       {showConfetti && (
@@ -132,5 +144,6 @@ export default function ChallengePicker() {
         )}
       </div>
     </div>
+    </>
   );
 }

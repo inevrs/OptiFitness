@@ -122,6 +122,17 @@ export default function Profile() {
   const bmiCat = getBMICategory(stats?.bmi);
 
   return (
+    <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#0a0a0a',
+      zIndex: -1,
+    }} />
+
     <div className="page">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
@@ -361,5 +372,6 @@ export default function Profile() {
         </div>
       )}
     </div>
+    </>
   );
 }

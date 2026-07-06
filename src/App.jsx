@@ -28,7 +28,7 @@ const ProtectedRoute = () => {
 
 const AppLayout = () => {
   return (
-    <div className="min-h-screen pb-16 bg-[#090909]">
+    <div className="min-h-screen pb-16">
       <Outlet />
       <TabBar />
     </div>

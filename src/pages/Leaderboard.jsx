@@ -31,6 +31,17 @@ export default function Leaderboard() {
   }, [view]);
 
   return (
+    <>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#0a0a0a',
+      zIndex: -1,
+    }} />
+
     <div className="page">
       <div className="space-y-6">
         <div>
@@ -103,5 +114,6 @@ export default function Leaderboard() {
         )}
       </div>
     </div>
+    </>
   );
 }

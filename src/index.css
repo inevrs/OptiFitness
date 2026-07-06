@@ -8,7 +8,7 @@
 :root {
   --lime:    #ff2a85;   /* primary accent  */
   --purple:  #c084fc;  /* secondary accent */
-  --bg:      #090909;   /* solid black/dark-gray */
+  --bg:      black;   /* solid black/dark-gray */
   --surface: #181818;
   --border:  rgba(255,255,255,0.08);
 }
@@ -17,7 +17,7 @@
   * { box-sizing: border-box; }
 
   body {
-    background-color: var(--bg);
+    background-color: black;
     color: #f0f0f0;
     font-family: 'Outfit', sans-serif;
     -webkit-overflow-scrolling: touch;
@@ -86,7 +86,7 @@
 .page {
   min-height: 100svh;
   padding: 3rem 1.25rem 8rem;
-  background: var(--bg);
+  background: transparent;
   max-width: 430px;
   margin: 0 auto;
 }
