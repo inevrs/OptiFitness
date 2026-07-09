@@ -35,9 +35,17 @@ async function initDb() {
     await conn.query(`DELETE FROM user_badges WHERE badge_id > 6`);
     await conn.query(`DELETE FROM badges WHERE id > 6`);
     try {
-      await conn.query(`ALTER TABLE exercise_logs ADD COLUMN photo_path LONGTEXT NULL`);
+      await conn.query(`ALTER TABLE users MODIFY COLUMN last_active_date DATETIME NULL`);
     } catch (_) {
-      await conn.query(`ALTER TABLE exercise_logs MODIFY COLUMN photo_path LONGTEXT NULL`);
+      // ignore if column doesn't exist yet or cannot be modified on first boot
+    }
+    // Allow squads to have NULL leader (for empty squads)
+    try {
+      await conn.query(`ALTER TABLE squads MODIFY COLUMN created_by INT NULL`);
+      await conn.query(`ALTER TABLE squads DROP FOREIGN KEY squads_ibfk_1`);
+      await conn.query(`ALTER TABLE squads ADD CONSTRAINT squads_ibfk_1 FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL`);
+    } catch (_) {
+      // ignore if already updated
     }
   } catch (e) {
     // Table might not exist yet on first boot, ignore

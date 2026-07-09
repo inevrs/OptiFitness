@@ -9,6 +9,21 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = async () => {
+    if (!token) return null;
+
+    try {
+      const userData = await apiGet('/profile');
+      setUser(userData);
+      setIsAuthenticated(true);
+      return userData;
+    } catch (error) {
+      console.warn('Profile refresh failed:', error.message);
+      logout();
+      return null;
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       // Check for token passed from App Inventor via URL query parameters
@@ -25,14 +40,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (activeToken) {
-        try {
-          const userData = await apiGet('/profile');
-          setUser(userData);
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.warn('Auth check failed (is backend running?):', error.message);
-          logout();
-        }
+        await refreshUser();
       }
       setLoading(false);
     };
@@ -73,7 +81,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

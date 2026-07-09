@@ -129,3 +129,11 @@ export const CheckCircleIcon = ({ size = defaultProps.size, color = defaultProps
     <polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 );
+
+export const InfoIcon = ({ size = defaultProps.size, color = defaultProps.color, strokeWidth = defaultProps.strokeWidth }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4" />
+    <path d="M12 8h.01" />
+  </svg>
+);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HomeIcon, SquadsIcon, WaterIcon, BadgeIcon, ProfileIcon } from './Icons';
+import { HomeIcon, SquadsIcon, WaterIcon, BadgeIcon, ProfileIcon, InfoIcon } from './Icons';
 
 const tabs = [
   { path: '/dashboard', label: 'Home',    Icon: HomeIcon    },
@@ -9,6 +9,7 @@ const tabs = [
   { path: '/water',     label: 'Water',   Icon: WaterIcon   },
   { path: '/badges',    label: 'Badges',  Icon: BadgeIcon   },
   { path: '/profile',   label: 'Profile', Icon: ProfileIcon },
+  { path: '/about',     label: 'About',   Icon: InfoIcon },
 ];
 
 const TabBar = () => (

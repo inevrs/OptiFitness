@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import { apiGet } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { DumbbellIcon, MealIcon, ScaleIcon, BadgeIcon, FlameIcon, StarIcon, LightningIcon, WaterIcon, FeedIcon, ChevronRight, CheckCircleIcon } from '../components/Icons';
+import bgStrength from '../assets/workout_images/workout-strength.jpg';
 
 const stagger = {
   hidden:  { opacity: 0 },
@@ -40,7 +41,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user?.id, user?.total_points, user?.current_streak]);
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -57,7 +58,7 @@ return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundImage: "url('src/assets/workout_images/workout-strength.jpg')",
+      backgroundImage: `url(${bgStrength})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
@@ -70,7 +71,7 @@ return (
 
         {/* Header */}
         <motion.div variants={item}>
-          <p className="text-gray-500 text-sm">{today}</p>
+          <p className="text-white text-sm">{today}</p>
           <h1 className="text-2xl font-bold mt-0.5">
             {greeting()},{' '}
             <span className="text-lime-grad">{user?.full_name?.split(' ')[0] || user?.username || 'Athlete'}</span> 👋
@@ -80,20 +81,20 @@ return (
         {/* Streak + Points */}
         <motion.div variants={item} className="grid grid-cols-2 gap-4">
           <GlassCard className="p-5 text-center glow-lime">
-            <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-2 font-semibold">Streak</p>
+            <p className="text-white text-[10px] uppercase tracking-widest mb-2 font-semibold">Streak</p>
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <FlameIcon size={26} color="#ff2a85" strokeWidth={2} />
               <p className="text-3xl font-bold" style={{ color: '#ff2a85' }}>{points.current_streak}</p>
             </div>
-            <p className="text-gray-600 text-[10px]">days</p>
+            <p className="text-white text-[10px]">days</p>
           </GlassCard>
           <GlassCard className="p-5 text-center glow-purple">
-            <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-2 font-semibold">Points</p>
+            <p className="text-white text-[10px] uppercase tracking-widest mb-2 font-semibold">Points</p>
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <StarIcon size={22} color="#c084fc" strokeWidth={2} />
               <p className="text-3xl font-bold" style={{ color: '#c084fc' }}>{points.total_points}</p>
             </div>
-            <p className="text-gray-600 text-[10px]">earned</p>
+            <p className="text-white text-[10px]">earned</p>
           </GlassCard>
         </motion.div>
 
@@ -104,9 +105,9 @@ return (
             onClick={() => navigate('/water')}
           >
             <div className="flex-1 pr-4">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-semibold">Hydration</p>
+              <p className="text-[10px] text-white uppercase tracking-widest mb-1 font-semibold">Hydration</p>
               <h3 className="text-xl font-bold text-white">{water.count} / {water.goal} glasses</h3>
-              <p className="text-gray-600 text-sm mt-1 flex items-center gap-1.5">
+              <p className="text-white text-sm mt-1 flex items-center gap-1.5">
                 {water.count >= water.goal ? (
                   <><CheckCircleIcon size={16} color="#4ade80" /> Goal reached!</>
                 ) : `${water.goal - water.count} more to go`}
@@ -134,9 +135,9 @@ return (
             <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full opacity-15 blur-xl"
               style={{ background: '#c084fc' }} />
             <div className="relative z-10">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-semibold">Daily Challenges</p>
+              <p className="text-[10px] text-white uppercase tracking-widest mb-1 font-semibold">Daily Challenges</p>
               <h3 className="text-lg font-bold text-white">Daily Workout</h3>
-              <p className="text-gray-500 text-sm mt-0.5">Tap to start your tasks</p>
+              <p className="text-white text-sm mt-0.5">Tap to start your tasks</p>
             </div>
             <div className="relative z-10">
               <LightningIcon size={36} color="#c084fc" strokeWidth={1.5} />
@@ -146,7 +147,7 @@ return (
 
         {/* Quick Actions */}
         <motion.div variants={item}>
-          <p className="text-gray-600 text-[10px] uppercase tracking-widest mb-3 pl-1 font-semibold">Quick Access</p>
+          <p className="text-white text-[10px] uppercase tracking-widest mb-3 pl-1 font-semibold">Quick Access</p>
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: 'Exercise', Icon: DumbbellIcon, path: '/exercise' },
@@ -175,7 +176,7 @@ return (
             onClick={() => navigate('/feed')}
           >
             <div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-semibold">Community Feed</p>
+              <p className="text-[10px] text-white uppercase tracking-widest mb-1 font-semibold">Community Feed</p>
               <h3 className="text-base font-semibold text-white">See what's happening</h3>
             </div>
             <ChevronRight size={18} color="rgba(255,255,255,0.25)" />

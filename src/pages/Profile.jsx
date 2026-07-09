@@ -1,20 +1,16 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../components/GlassCard';
 import { apiGet, apiPut } from '../utils/api';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const fetchWrapper = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('zf_token');
-  const res = await fetch(`/api${endpoint}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(token && { Authorization: `Bearer ${token}` }), ...options.headers },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
-};
+const ProfileFieldRow = ({ label, value }) => (
+  <div className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+    <span className="text-gray-500 text-sm">{label}</span>
+    <span className="text-white font-medium text-sm">{value}</span>
+  </div>
+);
 
 export default function Profile() {
   const { user, logout } = useContext(AuthContext);
@@ -81,7 +77,7 @@ export default function Profile() {
     setSecSaving(true);
     setSecMsg({ text: '', ok: true });
     try {
-      await fetchWrapper('/auth/username', { method: 'PUT', body: JSON.stringify(usernameForm) });
+      await apiPut('/auth/username', usernameForm);
       setSecMsg({ text: '✓ Username updated! Please log in again.', ok: true });
       setUsernameForm({ new_username: '', password: '' });
       setTimeout(() => { logout(); navigate('/login'); }, 2000);
@@ -101,7 +97,7 @@ export default function Profile() {
     setSecSaving(true);
     setSecMsg({ text: '', ok: true });
     try {
-      await fetchWrapper('/auth/password', { method: 'PUT', body: JSON.stringify({ current_password: passwordForm.current_password, new_password: passwordForm.new_password }) });
+      await apiPut('/auth/password', { current_password: passwordForm.current_password, new_password: passwordForm.new_password });
       setSecMsg({ text: '✓ Password updated successfully!', ok: true });
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
     } catch (err) {
@@ -253,10 +249,7 @@ export default function Profile() {
                   { label: 'Height',    value: form.height_cm ? `${form.height_cm} cm` : '—' },
                   { label: 'Age',       value: form.age       ? `${form.age} years`    : '—' },
                 ].map(r => (
-                  <div key={r.label} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
-                    <span className="text-gray-500 text-sm">{r.label}</span>
-                    <span className="text-white font-medium text-sm">{r.value}</span>
-                  </div>
+                  <ProfileFieldRow key={r.label} label={r.label} value={r.value} />
                 ))}
               </div>
             )}

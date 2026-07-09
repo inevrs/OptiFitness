@@ -17,6 +17,7 @@ import SquadPage from './pages/SquadPage';
 import BadgeGallery from './pages/BadgeGallery';
 import ChallengeFeed from './pages/ChallengeFeed';
 import Profile from './pages/Profile';
+import About from './pages/About';
 
 const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useContext(AuthContext);
@@ -56,6 +57,7 @@ const AppRoutes = () => {
           <Route path="/badges" element={<BadgeGallery />} />
           <Route path="/feed" element={<ChallengeFeed />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/about" element={<About />} />
         </Route>
       </Route>
     </Routes>

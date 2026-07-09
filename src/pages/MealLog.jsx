@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '../components/GlassCard';
-import { apiGet, apiPost } from '../utils/api';
+import { apiGet, apiPost, apiDelete } from '../utils/api';
 
 export default function MealLog() {
   const [meals, setMeals] = useState([]);
   const [mealName, setMealName] = useState('');
   const [calories, setCalories] = useState('');
   const [loading, setLoading] = useState(true);
+  const [expandedMealId, setExpandedMealId] = useState(null);
 
   const fetchMeals = async () => {
     try { setMeals(await apiGet('/meal/history')); }
@@ -98,17 +99,59 @@ export default function MealLog() {
         ) : (
           <div className="space-y-3">
             <p className="text-[10px] text-white font-bold uppercase tracking-widest pl-1">Recent Meals</p>
-            {meals.map(meal => (
-              <GlassCard key={meal.id} className="p-4 flex justify-between items-center">
-                <div>
-                  <span className="font-semibold text-white">{meal.meal_name}</span>
-                  <p className="text-whitetext-xs mt-0.5">
-                    {new Date(meal.logged_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                  </p>
-                </div>
-                <span className="font-semibold text-sm" style={{ color: '#ff2a85' }}>{meal.calories} kcal</span>
-              </GlassCard>
-            ))}
+            {meals.map(meal => {
+              const isExpanded = expandedMealId === meal.id;
+              return (
+                <GlassCard
+                  key={meal.id}
+                  onClick={() => setExpandedMealId(isExpanded ? null : meal.id)}
+                  className="p-4 cursor-pointer hover:bg-white/[0.02] transition-colors relative overflow-hidden"
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-semibold text-white">{meal.meal_name}</span>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {new Date(meal.logged_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </p>
+                    </div>
+                    <span className="font-semibold text-sm" style={{ color: '#ff2a85' }}>{meal.calories} kcal</span>
+                  </div>
+
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-4 pt-4 border-t border-white/5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex justify-between items-center gap-3">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">
+                          Log ID: #{meal.id}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Are you sure you want to delete this meal log?')) {
+                              try {
+                                await apiDelete(`/meal/${meal.id}`);
+                                setExpandedMealId(null);
+                                fetchMeals();
+                              } catch (err) {
+                                console.error('Failed to delete meal log:', err);
+                              }
+                            }
+                          }}
+                          className="text-xs text-rose-400 hover:text-rose-300 font-bold bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/20 px-3 py-1.5 rounded-lg transition"
+                        >
+                          Delete Log
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </GlassCard>
+              );
+            })}
           </div>
         )}
       </div>

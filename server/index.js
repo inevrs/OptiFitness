@@ -65,6 +65,38 @@ function calculateWaterGoal(weightKg, heightCm) {
   return 10;
 }
 
+function getDateKey(date = new Date()) {
+  const timezoneOffset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - timezoneOffset * 60000);
+  return localDate.toISOString().slice(0, 10);
+}
+
+function sameLocalDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function isYesterday(lastActive, now = new Date()) {
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  return sameLocalDay(lastActive, yesterday);
+}
+
+function isStreakExpired(lastActive, now = new Date()) {
+  if (!lastActive) return true;
+  if (sameLocalDay(lastActive, now)) return false;
+  if (isYesterday(lastActive, now)) return false;
+  return true;
+}
+
+function shouldIncrementStreak(lastActive, now = new Date()) {
+  if (!lastActive) return false;
+  return isYesterday(lastActive, now);
+}
+
 // ─── AUTH ───────────────────────────────────────────────────────────────────
 
 // SQUADS
@@ -175,12 +207,40 @@ app.get('/api/profile', auth, async (req, res) => {
   try {
     const [users] = await pool.query(`
       SELECT id, username, full_name, weight_kg, height_cm, age,
-             total_points, current_streak
+             total_points, current_streak, longest_streak, last_active_date
       FROM users
       WHERE id = ?
     `, [req.userId]);
     if (users.length === 0) return res.status(404).json({ error: 'User not found' });
-    res.json(users[0]);
+
+    const user = users[0];
+    const now = new Date();
+    const lastActive = user.last_active_date ? new Date(user.last_active_date) : null;
+
+    if (user.current_streak > 0 && lastActive && isStreakExpired(lastActive, now)) {
+      user.current_streak = 0;
+      await pool.query('UPDATE users SET current_streak = ? WHERE id = ?', [0, user.id]);
+    }
+
+    const isAtRisk = lastActive && isYesterday(lastActive, now);
+    const streakExpiresAt = isAtRisk
+      ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+      : null;
+
+    res.json({
+      id: user.id,
+      username: user.username,
+      full_name: user.full_name,
+      weight_kg: user.weight_kg,
+      height_cm: user.height_cm,
+      age: user.age,
+      total_points: user.total_points,
+      current_streak: user.current_streak,
+      longest_streak: user.longest_streak,
+      last_active_date: user.last_active_date,
+      streak_at_risk: isAtRisk,
+      streak_expires_at: streakExpiresAt,
+    });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -200,9 +260,9 @@ app.put('/api/profile', auth, async (req, res) => {
 
 app.post('/api/water/log', auth, async (req, res) => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getDateKey();
     await pool.query('INSERT INTO water_logs (user_id, log_date) VALUES (?, ?)', [req.userId, today]);
-    
+
     // Check for water badges (e.g. Hydrated)
     const newlyUnlocked = await checkAndAwardBadges(req.userId);
     res.json({ message: 'Water logged', newlyUnlocked });
@@ -213,7 +273,7 @@ app.post('/api/water/log', auth, async (req, res) => {
 
 app.delete('/api/water/log/latest', auth, async (req, res) => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getDateKey();
     const [logs] = await pool.query('SELECT id FROM water_logs WHERE user_id = ? AND log_date = ? ORDER BY logged_at DESC LIMIT 1', [req.userId, today]);
     if (logs.length > 0) {
       await pool.query('DELETE FROM water_logs WHERE id = ?', [logs[0].id]);
@@ -226,7 +286,7 @@ app.delete('/api/water/log/latest', auth, async (req, res) => {
 
 app.post('/api/water/reset', auth, async (req, res) => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getDateKey();
     await pool.query('DELETE FROM water_logs WHERE user_id = ? AND log_date = ?', [req.userId, today]);
     res.json({ message: 'Reset' });
   } catch (err) {
@@ -236,7 +296,7 @@ app.post('/api/water/reset', auth, async (req, res) => {
 
 app.get('/api/water/today', auth, async (req, res) => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getDateKey();
     const [logs] = await pool.query('SELECT COUNT(*) as count FROM water_logs WHERE user_id = ? AND log_date = ?', [req.userId, today]);
     const [entries] = await pool.query('SELECT id, logged_at FROM water_logs WHERE user_id = ? AND log_date = ? ORDER BY logged_at ASC', [req.userId, today]);
     res.json({ count: logs[0].count, goal: 8, entries });
@@ -298,6 +358,15 @@ app.get('/api/meal/history', auth, async (req, res) => {
   }
 });
 
+app.delete('/api/meal/:id', auth, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM meal_logs WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
+    res.json({ message: 'Meal log deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ─── SQUADS ──────────────────────────────────────────────────────────────────
 
 app.get('/api/squads', auth, async (req, res) => {
@@ -323,9 +392,29 @@ app.post('/api/squads', auth, async (req, res) => {
 
 app.post('/api/squads/:id/join', auth, async (req, res) => {
   try {
-    // Remove from old squad first
-    await pool.query('DELETE FROM squad_members WHERE user_id = ?', [req.userId]);
-    await pool.query('INSERT INTO squad_members (squad_id, user_id) VALUES (?, ?)', [req.params.id, req.userId]);
+    const squadId = req.params.id;
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      // Remove from old squad first
+      await conn.query('DELETE FROM squad_members WHERE user_id = ?', [req.userId]);
+      await conn.query('INSERT INTO squad_members (squad_id, user_id) VALUES (?, ?)', [squadId, req.userId]);
+
+      // If joining an empty squad (no leader), become the new leader
+      const [squad] = await conn.query('SELECT created_by FROM squads WHERE id = ?', [squadId]);
+      if (squad.length > 0 && squad[0].created_by === null) {
+        await conn.query('UPDATE squads SET created_by = ? WHERE id = ?', [req.userId, squadId]);
+      }
+
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+
     res.json({ message: 'Joined squad' });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -347,20 +436,18 @@ app.post('/api/squads/:id/leave', auth, async (req, res) => {
       // Remove the leaving member
       await conn.query('DELETE FROM squad_members WHERE user_id = ? AND squad_id = ?', [req.userId, squadId]);
 
-      // If the leaving user was the leader, promote the next-oldest member
-      if (squad.created_by === req.userId) {
-        const [remaining] = await conn.query(
-          'SELECT user_id FROM squad_members WHERE squad_id = ? ORDER BY joined_at ASC LIMIT 1',
-          [squadId]
-        );
+      // Check how many members are left
+      const [remaining] = await conn.query(
+        'SELECT user_id FROM squad_members WHERE squad_id = ? ORDER BY joined_at ASC LIMIT 1',
+        [squadId]
+      );
 
-        if (remaining.length > 0) {
-          // Promote the next member to leader
-          await conn.query('UPDATE squads SET created_by = ? WHERE id = ?', [remaining[0].user_id, squadId]);
-        } else {
-          // No members left — delete the now-empty squad
-          await conn.query('DELETE FROM squads WHERE id = ?', [squadId]);
-        }
+      if (remaining.length === 0) {
+        // No members left — clear leadership (set to NULL)
+        await conn.query('UPDATE squads SET created_by = NULL WHERE id = ?', [squadId]);
+      } else if (squad.created_by === req.userId) {
+        // If the leaving user was the leader and there are members left, promote the next member
+        await conn.query('UPDATE squads SET created_by = ? WHERE id = ?', [remaining[0].user_id, squadId]);
       }
 
       await conn.commit();
@@ -378,11 +465,48 @@ app.post('/api/squads/:id/leave', auth, async (req, res) => {
   }
 });
 
+app.delete('/api/squads/:id', auth, async (req, res) => {
+  try {
+    const squadId = req.params.id;
+
+    const [squads] = await pool.query('SELECT * FROM squads WHERE id = ?', [squadId]);
+    if (squads.length === 0) return res.status(404).json({ error: 'Squad not found' });
+
+    const squad = squads[0];
+    if (squad.created_by !== req.userId) {
+      return res.status(403).json({ error: 'Only the squad leader can delete this squad' });
+    }
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      await conn.query('DELETE FROM squad_members WHERE squad_id = ?', [squadId]);
+      await conn.query('DELETE FROM squads WHERE id = ?', [squadId]);
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+
+    res.json({ message: 'Squad deleted' });
+  } catch (err) {
+    console.error('Delete squad error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.get('/api/squads/:id', auth, async (req, res) => {
   try {
-    const [members] = await pool.query('SELECT u.id, u.username, u.full_name FROM users u JOIN squad_members sm ON u.id = sm.user_id WHERE sm.squad_id = ? ORDER BY sm.joined_at ASC', [req.params.id]);
+    const [squads] = await pool.query('SELECT * FROM squads WHERE id = ?', [req.params.id]);
     if (squads.length === 0) return res.status(404).json({ error: 'Squad not found' });
-    const [members] = await pool.query('SELECT u.id, u.username, u.full_name FROM users u JOIN squad_members sm ON u.id = sm.user_id WHERE sm.squad_id = ?', [req.params.id]);
+
+    const [members] = await pool.query(
+      'SELECT u.id, u.username, u.full_name FROM users u JOIN squad_members sm ON u.id = sm.user_id WHERE sm.squad_id = ? ORDER BY sm.joined_at ASC',
+      [req.params.id]
+    );
+
     res.json({ squad: squads[0], members });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -430,7 +554,7 @@ async function checkAndAwardBadges(userId) {
 
 app.get('/api/challenges/today', auth, async (req, res) => {
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getDateKey();
     // Check if already assigned today
     const [existing] = await pool.query(
       'SELECT dc.*, mw.title, mw.description, mw.points FROM daily_challenges dc JOIN micro_workouts mw ON dc.micro_workout_id = mw.id WHERE dc.user_id = ? AND dc.challenge_date = ?',
@@ -480,15 +604,20 @@ app.post('/api/challenges/:id/complete', auth, async (req, res) => {
     await pool.query('UPDATE users SET total_points = total_points + ? WHERE id = ?', [pts, req.userId]);
 
     // Streak logic
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const now = new Date();
     const [up] = await pool.query('SELECT * FROM users WHERE id = ?', [req.userId]);
     const u = up[0];
+    const lastActive = u.last_active_date ? new Date(u.last_active_date) : null;
     let streak = u.current_streak;
-    if (u.last_active_date === yesterday) streak += 1;
-    else if (u.last_active_date !== today) streak = 1;
+
+    if (!lastActive || isStreakExpired(lastActive, now)) {
+      streak = 1;
+    } else if (shouldIncrementStreak(lastActive, now)) {
+      streak += 1;
+    }
+
     const longest = Math.max(u.longest_streak, streak);
-    await pool.query('UPDATE users SET current_streak = ?, longest_streak = ?, last_active_date = ? WHERE id = ?', [streak, longest, today, req.userId]);
+    await pool.query('UPDATE users SET current_streak = ?, longest_streak = ?, last_active_date = ? WHERE id = ?', [streak, longest, now, req.userId]);
 
     // Check for newly unlocked badges
     const newlyUnlocked = await checkAndAwardBadges(req.userId);
@@ -496,7 +625,15 @@ app.post('/api/challenges/:id/complete', auth, async (req, res) => {
     // Post to feed
     await pool.query('INSERT INTO feed_posts (user_id, post_type, message) VALUES (?, ?, ?)', [req.userId, 'challenge_completed', `Completed a challenge and earned ${pts} points! 💪`]);
 
-    res.json({ message: 'Challenge completed', points_earned: pts, streak, newly_unlocked_badges: newlyUnlocked });
+    const [updatedProfile] = await pool.query('SELECT total_points, current_streak, longest_streak FROM users WHERE id = ?', [req.userId]);
+    res.json({
+      message: 'Challenge completed',
+      points_earned: pts,
+      streak,
+      total_points: updatedProfile[0]?.total_points || 0,
+      current_streak: updatedProfile[0]?.current_streak || 0,
+      newly_unlocked_badges: newlyUnlocked
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });

@@ -4,6 +4,7 @@ import GlassCard from '../components/GlassCard';
 import { apiGet, apiPost } from '../utils/api';
 import { bridge } from '../utils/appInventorBridge';
 import { BadgeToastContext } from '../context/BadgeToastContext';
+import { AuthContext } from '../context/AuthContext';
 
 import cardioImg from '../assets/workout_images/workout-cardio.jpg';
 import stretchImg from '../assets/workout_images/workout-stretch.jpg';
@@ -18,6 +19,7 @@ const getWorkoutImage = (title) => {
 
 export default function ChallengePicker() {
   const { showBadge } = useContext(BadgeToastContext);
+  const { refreshUser } = useContext(AuthContext);
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -54,6 +56,7 @@ export default function ChallengePicker() {
         bridge.speak(`Awesome job completing ${title}!`);
       }
       
+      await refreshUser();
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
       fetchChallenges();

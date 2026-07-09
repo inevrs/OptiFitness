@@ -114,7 +114,7 @@ export default function WaterTracker() {
                   {glasses}
                 </motion.span>
               </AnimatePresence>
-              <span className="text-gray-500 text-sm">of {goal} glasses</span>
+              <span className="text-white text-sm">of {goal} glasses</span>
             </div>
           </div>
           {goalReached && (

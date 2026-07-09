@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '../components/GlassCard';
 import { apiGet, apiPost, apiDelete } from '../utils/api';
 import { bridge } from '../utils/appInventorBridge';
-import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import bgSquad from '../assets/workout_images/workout-squad.jpg';
 
 export default function SquadPage() {
   const [mySquadData, setMySquadData] = useState(null); // { squad: {}, members: [] } or null
@@ -98,7 +98,7 @@ export default function SquadPage() {
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundImage: "url('src/assets/workout_images/workout-squad.jpg')",
+      backgroundImage: `url(${bgSquad})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
