@@ -1,16 +1,16 @@
-# OptiFitness 🏋️
+# OptiFitness 
 
 A modern fitness tracking web app built with React + Vite (frontend) and Node.js + Express + MySQL (backend).
 
 ## Features
-- 💧 Water / Hydration Tracker
-- 🏃 Exercise Logger
-- 🥗 Meal Logger
-- ⚡ Daily Challenges & Points
-- 🏅 Badges & Achievements
-- 🏆 Global & Squad Leaderboard
-- 👥 Community Feed
-- 👤 Profile with Biometric Info (BMI, Weight, Height, Age)
+-  Water / Hydration Tracker
+-  Exercise Logger
+-  Meal Logger
+-  Daily Challenges & Points
+-  Badges & Achievements
+-  Global & Squad Leaderboard
+-  Community Feed
+-  Profile with Biometric Info (BMI, Weight, Height, Age)
 
 ---
 
